@@ -1,5 +1,5 @@
 # Testing
 
-    cd tests
-    ../test.py *.dot
-    ../test.py graphs/*.gv
+cd tests
+python ../test.py *.dot
+python../test.py graphs/*.gv

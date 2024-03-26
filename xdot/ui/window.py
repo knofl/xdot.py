@@ -50,7 +50,7 @@ class DotWidget(Gtk.DrawingArea):
 
     # TODO GTK3: Second argument has to be of type Gdk.EventButton instead of object.
     __gsignals__ = {
-        'clicked': (GObject.SignalFlags.RUN_LAST, None, (str, object)),
+        'clicked': (GObject.SignalFlags.RUN_LAST, None, (object, object)),
         'error': (GObject.SignalFlags.RUN_LAST, None, (str,)),
         'history': (GObject.SignalFlags.RUN_LAST, None, (bool, bool))
     }
@@ -439,9 +439,9 @@ class DotWidget(Gtk.DrawingArea):
                 return True
 
             if event.button == 1:
-                url = self.get_url(x, y)
-                if url is not None:
-                    self.emit('clicked', url.url, event)
+                attrs = self.get_attrs(x, y)
+                if attrs is not None:
+                    self.emit('clicked', attrs, event)
                 else:
                     ctrl_held = event.state & Gdk.ModifierType.CONTROL_MASK
                     jump = self.get_jump(x, y, to_dst=ctrl_held)
@@ -525,9 +525,9 @@ class DotWidget(Gtk.DrawingArea):
         x, y = self.window2graph(x, y)
         return self.graph.get_element(x, y)
 
-    def get_url(self, x, y):
+    def get_attrs(self, x, y):
         x, y = self.window2graph(x, y)
-        return self.graph.get_url(x, y)
+        return self.graph.get_attrs(x, y)
 
     def get_jump(self, x, y, to_dst = False):
         x, y = self.window2graph(x, y)

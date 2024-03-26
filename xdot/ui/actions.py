@@ -80,7 +80,7 @@ class NullAction(DragAction):
         else:
             x, y, state = event.x, event.y, event.state
         dot_widget = self.dot_widget
-        item = dot_widget.get_url(x, y)
+        item = dot_widget.get_attrs(x, y)
         if item is None:
             item = dot_widget.get_jump(x, y)
         if item is not None:

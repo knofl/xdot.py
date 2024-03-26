@@ -528,14 +528,32 @@ class CompoundShape(Shape):
         return None
 
 
-class Url(object):
+class Attrs(object):
 
-    def __init__(self, item, url, highlight=None):
+    def __init__(self, item, attrs, highlight=None):
         self.item = item
-        self.url = url
+        self._attrs = attrs
         if highlight is None:
             highlight = set([item])
         self.highlight = highlight
+        self.default = None
+    
+    def get(self, key, default=None):
+        self.default = default
+        if self._attrs is not None:
+            return self._attrs.get(key, self.default)
+        return self.default
+
+    def __getitem__(self, key):
+        if self._attrs is not None:
+            return self._attrs.get(key, self.default)
+        return self.default
+
+    def __setitem__(self, key, value):
+        if self._attrs is not None:
+            self._attrs[key] = value
+        raise TypeError("attrs is None")
+
 
 
 class Jump(object):
@@ -558,7 +576,7 @@ class Element(CompoundShape):
     def is_inside(self, x, y):
         return False
 
-    def get_url(self, x, y):
+    def get_attrs(self, x, y):
         return None
 
     def get_jump(self, x, y):
@@ -567,7 +585,7 @@ class Element(CompoundShape):
 
 class Node(Element):
 
-    def __init__(self, id, x, y, w, h, shapes, url, tooltip):
+    def __init__(self, id, x, y, w, h, shapes, attrs, tooltip):
         Element.__init__(self, shapes)
 
         self.id = id
@@ -579,17 +597,17 @@ class Node(Element):
         self.x2 = x + 0.5*w
         self.y2 = y + 0.5*h
 
-        self.url = url
+        self.attrs = attrs
         self.tooltip = tooltip
 
     def is_inside(self, x, y):
         return self.x1 <= x and x <= self.x2 and self.y1 <= y and y <= self.y2
 
-    def get_url(self, x, y):
-        if self.url is None:
+    def get_attrs(self, x, y):
+        if self.attrs is None:
             return None
         if self.is_inside(x, y):
-            return Url(self, self.url)
+            return Attrs(self, self.attrs)
         return None
 
     def get_jump(self, x, y):
@@ -728,11 +746,11 @@ class Graph(Shape):
             if edge.is_inside(x, y):
                 return edge
 
-    def get_url(self, x, y):
+    def get_attrs(self, x, y):
         for node in self.nodes:
-            url = node.get_url(x, y)
-            if url is not None:
-                return url
+            attrs = node.get_attrs(x, y)
+            if attrs is not None:
+                return attrs
         return None
 
     def get_jump(self, x, y, to_dst = False):

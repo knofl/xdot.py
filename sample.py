@@ -31,11 +31,12 @@ class MyDotWindow(xdot.ui.DotWindow):
         xdot.ui.DotWindow.__init__(self)
         self.dotwidget.connect('clicked', self.on_url_clicked)
 
-    def on_url_clicked(self, widget, url, event):
+    def on_url_clicked(self, widget, attrs, event):        
         dialog = Gtk.MessageDialog(
             parent=self,
             buttons=Gtk.ButtonsType.OK,
-            message_format="%s clicked" % url)
+            message_format="%s clicked" % attrs["URL"].decode('utf-8') 
+                if attrs.get("note") is None else attrs["note"].decode('utf-8'))
         dialog.connect('response', lambda dialog, response: dialog.destroy())
         dialog.run()
         return True
@@ -44,7 +45,7 @@ class MyDotWindow(xdot.ui.DotWindow):
 dotcode = b"""
 digraph G {
   Hello [URL="http://en.wikipedia.org/wiki/Hello"]
-  World [URL="http://en.wikipedia.org/wiki/World"]
+  World [URL="http://en.wikipedia.org/wiki/World", note="This is not url!"]
     Hello -> World
 }
 """

@@ -366,7 +366,7 @@ class XDotParser(DotParser):
         if shapes:
             src = self.node_by_name[src_id]
             dst = self.node_by_name[dst_id]
-            self.edges.append(elements.Edge(src, dst, points, shapes, attrs.get("tooltip")))
+            self.edges.append(elements.Edge(src, dst, points, shapes, attrs.get("tooltip"), attrs))
 
     def parse(self):
         DotParser.parse(self)

@@ -102,14 +102,14 @@ class TextShape(Shape):
 
     LEFT, CENTER, RIGHT = -1, 0, 1
 
-    def __init__(self, pen, x, y, j, w, t):
+    def __init__(self, pen, x, y, j, w, text):
         Shape.__init__(self)
         self.pen = pen.copy()
         self.x = x
         self.y = y
         self.j = j  # Centering
         self.w = w  # width
-        self.t = t  # text
+        self.text = text # text
         default_settings = Gtk.Settings.get_default()
         if default_settings:
             self.default_fontname = default_settings.get_property("gtk-font-name")
@@ -150,7 +150,7 @@ class TextShape(Shape):
             font = Pango.FontDescription()
 
             # https://developer.gnome.org/pango/stable/PangoMarkupFormat.html
-            markup = GObject.markup_escape_text(self.t)
+            markup = GObject.markup_escape_text(self.text)
             if self.pen.bold:
                 markup = '<b>' + markup + '</b>'
             if self.pen.italic:
@@ -227,7 +227,7 @@ class TextShape(Shape):
             cr.stroke()
 
     def search_text(self, regexp):
-        return regexp.search(self.t) is not None
+        return regexp.search(self.text) is not None
 
     @property
     def bounding(self):
@@ -235,7 +235,7 @@ class TextShape(Shape):
         return x - 0.5 * (1 + j) * w, -_inf, x + 0.5 * (1 - j) * w, _inf
 
     def get_text(self):
-        return self.t
+        return self.text
 
 
 class ImageShape(Shape):
@@ -577,6 +577,10 @@ class Element(CompoundShape):
         return False
 
     def get_attrs(self, x, y):
+        if self.attrs is None:
+            return None
+        if self.is_inside(x, y):
+            return Attrs(self, self.attrs)
         return None
 
     def get_jump(self, x, y):
@@ -603,12 +607,12 @@ class Node(Element):
     def is_inside(self, x, y):
         return self.x1 <= x and x <= self.x2 and self.y1 <= y and y <= self.y2
 
-    def get_attrs(self, x, y):
-        if self.attrs is None:
-            return None
-        if self.is_inside(x, y):
-            return Attrs(self, self.attrs)
-        return None
+    # def get_attrs(self, x, y):
+    #     if self.attrs is None:
+    #         return None
+    #     if self.is_inside(x, y):
+    #         return Attrs(self, self.attrs)
+    #     return None
 
     def get_jump(self, x, y):
         if self.is_inside(x, y):
@@ -627,12 +631,13 @@ def square_distance(x1, y1, x2, y2):
 
 class Edge(Element):
 
-    def __init__(self, src, dst, points, shapes, tooltip):
+    def __init__(self, src, dst, points, shapes, tooltip, attrs):
         Element.__init__(self, shapes)
         self.src = src
         self.dst = dst
         self.points = points
         self.tooltip = tooltip
+        self.attrs = attrs
 
     RADIUS = 10
 
@@ -681,6 +686,7 @@ class Graph(Shape):
         self.nodes = nodes
         self.edges = edges
         self.outputorder = outputorder
+        self.notes = []
 
         self.bounding = Shape._envelope_bounds(
             map(_get_bounding, self.shapes),
@@ -715,6 +721,11 @@ class Graph(Shape):
                                        for e in (edge, edge.src, edge.dst))
                 edge._draw(cr, highlight=should_highlight, bounding=bounding)
 
+    def _draw_notes(self, cr, bounding, highlight_items):        
+        for note in self.notes:
+            if bounding is None or node._intersects(bounding):
+                note._draw(cr, highlight=False, bounding=bounding)
+
     def draw(self, cr, highlight_items=None, bounding=None):
         if bounding is not None:
             if not self._intersects(bounding):
@@ -737,6 +748,23 @@ class Graph(Shape):
         else:
             self._draw_nodes(cr, bounding, highlight_items)
             self._draw_edges(cr, bounding, highlight_items)
+        self._draw_notes(cr, None, highlight_items)
+        
+
+    def add_note(self, shapes, x, y, content):
+        #from ..ui.pen import Pen
+        # parser = XDotAttrParser(self, "c 7 -#000000 e 36 234 36 18 ", self.broken_backslashes)
+        # txt_parser = XDotAttrParser(self, "F 14 11 -Times-Roman c 7 -#000000 T 36 228.95 0 36.75 6 -loc_03 ", self.broken_backslashes)
+        #pen = Pen()
+        nshapes = []
+        for shape in shapes:                        
+            if type(shape) is TextShape:
+                nshape = TextShape(shape.pen, shape.x + 60, shape.y, shape.j, shape.w, content)
+            else:
+                nshape = EllipseShape(shape.pen, shape.x0 + 60, shape.y0, shape.w, shape.h)
+            nshapes.append(nshape)
+        note = Node(f"note {x}_{y}", x + 100, y - 50, 100, 100, nshapes, [], "")
+        self.notes.append(note)
 
     def get_element(self, x, y):
         for node in self.nodes:
@@ -749,6 +777,10 @@ class Graph(Shape):
     def get_attrs(self, x, y):
         for node in self.nodes:
             attrs = node.get_attrs(x, y)
+            if attrs is not None:
+                return attrs
+        for edge in self.edges:
+            attrs = edge.get_attrs(x, y)
             if attrs is not None:
                 return attrs
         return None

@@ -213,11 +213,10 @@ class DotWidget(Gtk.DrawingArea):
                               rect.width, rect.height)
 
         cr.save()
-        self._draw_graph(cr, rect)
+        self._draw_graph(cr, rect)        
         cr.restore()
 
         self.drag_action.draw(cr)
-
         return False
 
     def get_current_pos(self):
@@ -572,7 +571,7 @@ class DotWindow(Gtk.Window):
     def __init__(self, widget=None, width=512, height=512):
         Gtk.Window.__init__(self)
 
-        self.graph = Graph()
+        # self.graph = Graph()
 
         window = self
 
@@ -585,6 +584,8 @@ class DotWindow(Gtk.Window):
         self.dotwidget = widget or DotWidget()
         self.dotwidget.connect("error", lambda e, m: self.error_dialog(m))
         self.dotwidget.connect("history", self.on_history)
+
+        self.fixed = Gtk.Layout()
 
         # Create a UIManager instance
         uimanager = self.uimanager = Gtk.UIManager()
@@ -637,9 +638,10 @@ class DotWindow(Gtk.Window):
 
         # Create a Toolbar
         toolbar = uimanager.get_widget('/ToolBar')
-        vbox.pack_start(toolbar, False, False, 0)
-
+        vbox.pack_start(toolbar, False, False, 0)        
+        
         vbox.pack_start(self.dotwidget, True, True, 0)
+        vbox.pack_start(self.fixed, False, False, 0)
 
         self.last_open_dir = "."
 

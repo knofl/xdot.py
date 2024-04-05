@@ -437,7 +437,7 @@ class DotWidget(Gtk.DrawingArea):
             if self.on_click(el, event):
                 return True
 
-            if event.button == 1:
+            if event.button == 1 or event.button == 3:
                 attrs = self.get_attrs(x, y)
                 if attrs is not None:
                     self.emit('clicked', attrs, event)
